@@ -426,15 +426,10 @@ def build_table_html(table_data, quarters):
         'Kehendak':  'row-group-keh',
         'Simpanan':  'row-group-sim'
     }
-    group_header_bg = {
-        'Keperluan': 'rgba(66,133,244,0.25)',
-        'Kehendak':  'rgba(52,168,83,0.25)',
-        'Simpanan':  'rgba(234,67,53,0.25)',
-    }
-    group_header_color = {
-        'Keperluan': '#90caf9',
-        'Kehendak':  '#a5d6a7',
-        'Simpanan':  '#ef9a9a',
+    group_header_label = {
+        'Keperluan': '🏠 &nbsp; Keperluan',
+        'Kehendak':  '💎 &nbsp; Kehendak',
+        'Simpanan':  '💰 &nbsp; Simpanan',
     }
 
     html = '''
@@ -459,18 +454,22 @@ def build_table_html(table_data, quarters):
 
         # Group separator header row
         if grp != prev_group:
+            grp_bg    = {'Keperluan':'rgba(66,133,244,0.20)','Kehendak':'rgba(52,168,83,0.20)','Simpanan':'rgba(234,67,53,0.20)'}[grp]
+            grp_color = {'Keperluan':'#90caf9','Kehendak':'#a5d6a7','Simpanan':'#ef9a9a'}[grp]
+            grp_label = group_header_label[grp]
             n_cols = 1 + len(q_labels) * 2
             html += f'''<tr>
                 <td colspan="{n_cols}" style="
-                    background:{group_header_bg[grp]};
-                    color:{group_header_color[grp]};
+                    background:{grp_bg};
+                    color:{grp_color};
                     font-weight:700;
-                    font-size:0.75rem;
-                    letter-spacing:1px;
+                    font-size:0.82rem;
+                    letter-spacing:1.5px;
                     text-transform:uppercase;
-                    padding:6px 20px;
-                    border-bottom:1px solid rgba(255,255,255,0.08);
-                ">{grp}</td>
+                    padding:8px 20px;
+                    border-top:1px solid rgba(255,255,255,0.06);
+                    border-bottom:1px solid rgba(255,255,255,0.06);
+                ">{grp_label}</td>
             </tr>'''
             prev_group = grp
 
@@ -492,19 +491,20 @@ def build_table_html(table_data, quarters):
             html += f'<td class="cell-rm-max">RM {d.get("rm_max",0):,.2f}</td>'
         html += '</tr>'
 
-    # Balance row
+    # Balance section header
     n_cols = 1 + len(q_labels) * 2
     html += f'''<tr>
         <td colspan="{n_cols}" style="
             background:rgba(255,215,0,0.12);
             color:#ffe082;
             font-weight:700;
-            font-size:0.75rem;
-            letter-spacing:1px;
+            font-size:0.82rem;
+            letter-spacing:1.5px;
             text-transform:uppercase;
-            padding:6px 20px;
-            border-bottom:1px solid rgba(255,255,255,0.08);
-        ">Balance</td>
+            padding:8px 20px;
+            border-top:1px solid rgba(255,255,255,0.06);
+            border-bottom:1px solid rgba(255,255,255,0.06);
+        ">📊 &nbsp; Quarterly Balance</td>
     </tr>'''
     html += '<tr class="row-balance row-group-bal">'
     html += '<td class="cell-item" style="color:#ffe082;">Quarterly Balance</td>'
@@ -549,7 +549,16 @@ with st.sidebar:
         help="Select quarterly income distribution pattern"
     )
     p_vals = P_TYPES[p_name]
-    st.caption(f"Q1={p_vals['Q1']} | Q2={p_vals['Q2']} | Q3={p_vals['Q3']} | Q4={p_vals['Q4']}")
+    st.markdown(f"""
+    <div style='background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 12px;
+    margin-top:-8px;margin-bottom:8px;font-size:0.78rem;color:rgba(255,255,255,0.5);
+    display:flex;justify-content:space-between;'>
+        <span>Q1 <b style='color:#90caf9'>{p_vals['Q1']}</b></span>
+        <span>Q2 <b style='color:#ef9a9a'>{p_vals['Q2']}</b></span>
+        <span>Q3 <b style='color:#a5d6a7'>{p_vals['Q3']}</b></span>
+        <span>Q4 <b style='color:#ce93d8'>{p_vals['Q4']}</b></span>
+    </div>
+    """, unsafe_allow_html=True)
 
     alpha_name = st.selectbox(
         "🎯 Alpha Scenario",
@@ -557,33 +566,18 @@ with st.sidebar:
         help="Select budget allocation ratio"
     )
     a_vals = ALPHA_SCENARIOS[alpha_name]
-    st.caption(f"Kep={a_vals['Keperluan']} | Keh={a_vals['Kehendak']} | Sim={a_vals['Simpanan']}")
-
-    st.markdown("---")
-
-    st.markdown("""
-    <div style='background:rgba(102,126,234,0.15);border:1px solid rgba(102,126,234,0.3);
-    border-radius:8px;padding:10px;font-size:0.75rem;color:rgba(255,255,255,0.6)'>
-    <b style='color:rgba(255,255,255,0.8)'>📌 Testing Mode</b><br>
-    Currently using <b>Purata/Mean</b> y-values to generate the table.<br><br>
-    Y = mean y value from statistics file<br>
-    RM = Y × E_k (income-scaled)
+    st.markdown(f"""
+    <div style='background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 12px;
+    margin-top:-8px;margin-bottom:8px;font-size:0.78rem;color:rgba(255,255,255,0.5);
+    display:flex;justify-content:space-between;'>
+        <span>🏠 <b style='color:#90caf9'>{a_vals['Keperluan']}</b></span>
+        <span>💎 <b style='color:#a5d6a7'>{a_vals['Kehendak']}</b></span>
+        <span>💰 <b style='color:#ce93d8'>{a_vals['Simpanan']}</b></span>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("---")
     calc_btn = st.button("⚡ Calculate", use_container_width=True)
-
-    st.markdown("---")
-    st.markdown("""
-    <div style='color:rgba(255,255,255,0.4);font-size:0.75rem;'>
-    <b>Legend</b><br>
-    🔵 Min = Based on Mean y value<br>
-    🟠 Max = Based on Mean y value<br>
-    Y = Weightage value (dimensionless)<br>
-    RM = Monetary value (income-scaled)
-    </div>
-    """, unsafe_allow_html=True)
 
 # ── Main Content ──────────────────────────────────────────────────────────
 if calc_btn:
@@ -614,21 +608,27 @@ if calc_btn:
 
     # ── Summary Cards ─────────────────────────────────────────────────
     q1_income  = P_TYPES[p_name]['Q1'] * I_income
-    q4_income  = P_TYPES[p_name]['Q4'] * I_income
     q1_balance = table_data.get('Q1',{}).get('BALANCE',{}).get('rm_min', 0)
     q4_balance = table_data.get('Q4',{}).get('BALANCE',{}).get('rm_min', 0)
 
+    # Total balance = sum of all quarterly balances
+    total_balance = sum(
+        table_data.get(q,{}).get('BALANCE',{}).get('rm_min', 0)
+        for q in ['Q1','Q2','Q3','Q4']
+    )
+
     c1, c2, c3, c4 = st.columns(4)
     cards = [
-        (c1, f"RM {I_income:,}",      "Annual Income"),
-        (c2, f"RM {q1_income:,.0f}",  "Q1 Quarterly Income"),
-        (c3, f"RM {q1_balance:,.2f}", "Q1 Est. Balance"),
-        (c4, f"RM {q4_balance:,.2f}", "Q4 Est. Balance"),
+        (c1, f"RM {I_income:,}",          "Annual Income",     "💵"),
+        (c2, f"RM {total_balance:,.2f}",   "Total Balance",     "📈"),
+        (c3, f"RM {q1_balance:,.2f}",      "Q1 Est. Balance",   "🏦"),
+        (c4, f"RM {q4_balance:,.2f}",      "Q4 Est. Balance",   "💰"),
     ]
-    for col_widget, val, lbl in cards:
+    for col_widget, val, lbl, icon in cards:
         with col_widget:
             st.markdown(f"""
             <div class="stat-card">
+                <div style='font-size:1.5rem;margin-bottom:4px'>{icon}</div>
                 <div class="stat-value">{val}</div>
                 <div class="stat-label">{lbl}</div>
             </div>
@@ -643,7 +643,7 @@ if calc_btn:
             📋 Budget Allocation Table
         </div>
         <div style='color:rgba(255,255,255,0.4);font-size:0.8rem;'>
-            {p_name} | {alpha_name} | Testing: Purata/Mean y-values
+            {p_name} &nbsp;|&nbsp; {alpha_name}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -651,15 +651,7 @@ if calc_btn:
     table_html = build_table_html(table_data, P_TYPES[p_name])
     st.markdown(table_html, unsafe_allow_html=True)
 
-    # ── Footer info ───────────────────────────────────────────────────
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='color:rgba(255,255,255,0.3);font-size:0.75rem;text-align:center;'>
-        📌 <b>Testing Mode</b> — Y values based on Purata/Mean from statistics file &nbsp;|&nbsp;
-        RM = Y × E_k &nbsp;|&nbsp; E_k = d_k × p_j × Income &nbsp;|&nbsp;
-        Balance = E_k − Σ(y_mean × E_k)
-    </div>
-    """, unsafe_allow_html=True)
+    plt_close = None  # placeholder
 
 else:
     st.markdown("""
