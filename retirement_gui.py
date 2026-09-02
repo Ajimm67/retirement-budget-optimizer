@@ -385,33 +385,46 @@ def compute_table_from_y(I_income, p_name, alpha_name, mode='mean'):
         E_map    = {'Keperluan': E_kep, 'Kehendak': E_keh, 'Simpanan': E_sim}
 
         results[q_name] = {}
-        sum_y = {'Keperluan': 0, 'Kehendak': 0, 'Simpanan': 0}
+        sum_y = {
+            'min': {'Keperluan': 0, 'Kehendak': 0, 'Simpanan': 0},
+            'max': {'Keperluan': 0, 'Kehendak': 0, 'Simpanan': 0},
+        }
 
         for col in ALL_COLS:
             grp   = GROUP_MAP[col]
             E_k   = E_map[grp]
             stats = Y_DATA[q_name][col]
-            y_val = stats['mean']  # testing with mean
-            rm    = round(y_val * E_k, 2)
+
+            y_min  = stats['p5']
+            y_max  = stats['p95']
+            rm_min = round(y_min * E_k, 2)
+            rm_max = round(y_max * E_k, 2)
 
             results[q_name][col] = {
-                'y_min':  round(y_val, 4),
-                'y_max':  round(y_val, 4),
-                'rm_min': rm,
-                'rm_max': rm,
+                'y_min':  round(y_min, 4),
+                'y_max':  round(y_max, 4),
+                'rm_min': rm_min,
+                'rm_max': rm_max,
                 'E_k':    round(E_k, 2),
             }
-            sum_y[grp] += y_val
+            sum_y['min'][grp] += y_min   # min spending → max balance
+            sum_y['max'][grp] += y_max   # max spending → min balance
 
-        # Balance = E_k × (1 - Σy_mean)
-        b1  = round(E_kep * (1 - sum_y['Keperluan']), 2)
-        b2  = round(E_keh * (1 - sum_y['Kehendak']),  2)
-        b3  = round(E_sim * (1 - sum_y['Simpanan']),  2)
-        bal = round(b1 + b2 + b3, 2)
+        # Min balance = when spending is at MAX (y = p95) → less savings
+        b1_min = round(E_kep * (1 - sum_y['max']['Keperluan']), 2)
+        b2_min = round(E_keh * (1 - sum_y['max']['Kehendak']),  2)
+        b3_min = round(E_sim * (1 - sum_y['max']['Simpanan']),  2)
+        bal_min = round(b1_min + b2_min + b3_min, 2)
+
+        # Max balance = when spending is at MIN (y = p5) → more savings
+        b1_max = round(E_kep * (1 - sum_y['min']['Keperluan']), 2)
+        b2_max = round(E_keh * (1 - sum_y['min']['Kehendak']),  2)
+        b3_max = round(E_sim * (1 - sum_y['min']['Simpanan']),  2)
+        bal_max = round(b1_max + b2_max + b3_max, 2)
 
         results[q_name]['BALANCE'] = {
-            'rm_min': bal,
-            'rm_max': bal,
+            'rm_min': bal_min,
+            'rm_max': bal_max,
         }
 
     return results
@@ -506,12 +519,23 @@ def build_table_html(table_data, quarters):
             border-bottom:1px solid rgba(255,255,255,0.06);
         ">📊 &nbsp; Quarterly Balance</td>
     </tr>'''
+
+    # Balance Min row (spending at max → lower balance)
     html += '<tr class="row-balance row-group-bal">'
-    html += '<td class="cell-item" style="color:#ffe082;">Quarterly Balance</td>'
+    html += '<td class="cell-item" style="color:#ef9a9a;font-size:0.82rem;">Minimum</td>'
     for q in q_labels:
-        d = table_data.get(q, {}).get('BALANCE', {})
+        d  = table_data.get(q, {}).get('BALANCE', {})
         rm = d.get('rm_min', 0)
-        html += f'<td class="cell-bal-min q-divider" colspan="2" style="text-align:center;">RM {rm:,.2f}</td>'
+        html += f'<td class="cell-bal-min q-divider" colspan="2" style="text-align:center;color:#ef9a9a;">RM {rm:,.2f}</td>'
+    html += '</tr>'
+
+    # Balance Max row (spending at min → higher balance)
+    html += '<tr class="row-balance row-group-bal">'
+    html += '<td class="cell-item" style="color:#a5d6a7;font-size:0.82rem;">Maximum</td>'
+    for q in q_labels:
+        d  = table_data.get(q, {}).get('BALANCE', {})
+        rm = d.get('rm_max', 0)
+        html += f'<td class="cell-bal-max q-divider" colspan="2" style="text-align:center;color:#a5d6a7;">RM {rm:,.2f}</td>'
     html += '</tr>'
 
     html += '</tbody></table></div>'
@@ -607,22 +631,20 @@ if calc_btn:
     table_data = compute_table_from_y(I_income, p_name, alpha_name)
 
     # ── Summary Cards ─────────────────────────────────────────────────
-    q1_income  = P_TYPES[p_name]['Q1'] * I_income
-    q1_balance = table_data.get('Q1',{}).get('BALANCE',{}).get('rm_min', 0)
-    q4_balance = table_data.get('Q4',{}).get('BALANCE',{}).get('rm_min', 0)
-
-    # Total balance = sum of all quarterly balances
-    total_balance = sum(
+    total_bal_min = sum(
         table_data.get(q,{}).get('BALANCE',{}).get('rm_min', 0)
         for q in ['Q1','Q2','Q3','Q4']
     )
+    total_bal_max = sum(
+        table_data.get(q,{}).get('BALANCE',{}).get('rm_max', 0)
+        for q in ['Q1','Q2','Q3','Q4']
+    )
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
     cards = [
-        (c1, f"RM {I_income:,}",          "Annual Income",     "💵"),
-        (c2, f"RM {total_balance:,.2f}",   "Total Balance",     "📈"),
-        (c3, f"RM {q1_balance:,.2f}",      "Q1 Est. Balance",   "🏦"),
-        (c4, f"RM {q4_balance:,.2f}",      "Q4 Est. Balance",   "💰"),
+        (c1, f"RM {I_income:,}",          "Annual Income",          "💵"),
+        (c2, f"RM {total_bal_min:,.2f}",   "Total Minimum Balance",  "📉"),
+        (c3, f"RM {total_bal_max:,.2f}",   "Total Maximum Balance",  "📈"),
     ]
     for col_widget, val, lbl, icon in cards:
         with col_widget:
