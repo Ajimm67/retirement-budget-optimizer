@@ -6,9 +6,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+import io
 
 # -----------------------------------------------------------------------
-# Page config
+# Page config — sidebar always expanded by default
 # -----------------------------------------------------------------------
 st.set_page_config(
     page_title="Retirement Budget Optimizer",
@@ -64,15 +65,21 @@ html, body, [class*="css"] {
 /* Hide Streamlit branding */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
 
-/* Make sure sidebar toggle button is always visible */
+/* IMPORTANT: Keep sidebar toggle button always visible */
 [data-testid="collapsedControl"] {
-    display: block !important;
+    display: flex !important;
     visibility: visible !important;
+    opacity: 1 !important;
     color: white !important;
-    background: rgba(102,126,234,0.4) !important;
+    background: rgba(102,126,234,0.5) !important;
     border-radius: 8px !important;
+    z-index: 9999 !important;
+}
+
+/* Do NOT hide header — it contains the sidebar toggle */
+section[data-testid="stSidebar"] {
+    display: block !important;
 }
 
 /* Main background */
@@ -307,8 +314,15 @@ label { color: rgba(255,255,255,0.85) !important; font-weight: 500 !important; }
 # -----------------------------------------------------------------------
 @st.cache_data
 def parse_y_values_file(file_bytes):
-    import io
-    df = pd.read_excel(io.BytesIO(file_bytes), header=None)
+    # Try multiple engines for reading Excel
+    for engine in ['openpyxl', 'xlrd']:
+        try:
+            df = pd.read_excel(io.BytesIO(file_bytes), header=None, engine=engine)
+            break
+        except Exception:
+            continue
+    else:
+        raise ValueError("Could not read Excel file. Please ensure it is a valid .xlsx file.")
 
     # Items order: N1-N8, H1-H3, S1 per quarter
     ITEMS_ORDER = ['N_1','N_2','N_3','N_4','N_5','N_6','N_7','N_8',
