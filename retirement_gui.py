@@ -71,28 +71,13 @@ html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
 }
 
-/* Hide Streamlit branding */
+/* Hide only Streamlit footer and main menu */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* Hide toolbar buttons (star, GitHub, share, pen) but keep sidebar toggle */
-[data-testid="stToolbar"] { display: none !important; }
-.stDeployButton { display: none !important; }
-
-/* Keep sidebar toggle always visible */
-[data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    color: white !important;
-    background: rgba(102,126,234,0.5) !important;
-    border-radius: 8px !important;
-    z-index: 9999 !important;
-}
-
-section[data-testid="stSidebar"] {
-    display: block !important;
-}
+/* Hide toolbar action buttons only - NOT the sidebar toggle */
+[data-testid="stToolbarActions"] {visibility: hidden;}
+.stDeployButton {display: none !important;}
 
 /* Main background */
 .main { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height: 100vh; }
