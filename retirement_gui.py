@@ -27,9 +27,18 @@ SIMPANAN  = ['S_1']
 ALL_COLS  = KEPERLUAN + KEHENDAK + SIMPANAN
 
 ITEM_DISPLAY = {
-    'N_1':'N1','N_2':'N2','N_3':'N3','N_4':'N4',
-    'N_5':'N5','N_6':'N6','N_7':'N7','N_8':'N8',
-    'W_1':'H1','W_2':'H2','W_3':'H3','S_1':'S1'
+    'N_1': 'Keperluan 1',
+    'N_2': 'Keperluan 2',
+    'N_3': 'Keperluan 3',
+    'N_4': 'Keperluan 4',
+    'N_5': 'Keperluan 5',
+    'N_6': 'Keperluan 6',
+    'N_7': 'Keperluan 7',
+    'N_8': 'Keperluan 8',
+    'W_1': 'Kehendak 1',
+    'W_2': 'Kehendak 2',
+    'W_3': 'Kehendak 3',
+    'S_1': 'Simpanan 1',
 }
 
 GROUP_MAP = {}
@@ -66,7 +75,11 @@ html, body, [class*="css"] {
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* IMPORTANT: Keep sidebar toggle button always visible */
+/* Hide toolbar buttons (star, GitHub, share, pen) but keep sidebar toggle */
+[data-testid="stToolbar"] { display: none !important; }
+.stDeployButton { display: none !important; }
+
+/* Keep sidebar toggle always visible */
 [data-testid="collapsedControl"] {
     display: flex !important;
     visibility: visible !important;
@@ -77,7 +90,6 @@ footer {visibility: hidden;}
     z-index: 9999 !important;
 }
 
-/* Do NOT hide header — it contains the sidebar toggle */
 section[data-testid="stSidebar"] {
     display: block !important;
 }
@@ -310,57 +322,76 @@ label { color: rgba(255,255,255,0.85) !important; font-weight: 500 !important; }
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------
-# Parse y-values-data.xlsx
+# Embedded y-values data (Purata/Mean, 5th%, 95th% from statistics file)
+# Source: y-values-data.xlsx | I=RM100,000 | Staircase | Scenario 1
 # -----------------------------------------------------------------------
-@st.cache_data
-def parse_y_values_file(file_bytes):
-    # Try multiple engines for reading Excel
-    for engine in ['openpyxl', 'xlrd']:
-        try:
-            df = pd.read_excel(io.BytesIO(file_bytes), header=None, engine=engine)
-            break
-        except Exception:
-            continue
-    else:
-        raise ValueError("Could not read Excel file. Please ensure it is a valid .xlsx file.")
-
-    # Items order: N1-N8, H1-H3, S1 per quarter
-    ITEMS_ORDER = ['N_1','N_2','N_3','N_4','N_5','N_6','N_7','N_8',
-                   'W_1','W_2','W_3','S_1']
-    Q_LABELS    = ['Q1','Q2','Q3','Q4']
-    N_ITEMS     = len(ITEMS_ORDER)
-
-    # Row indices (0-based)
-    ROW_MEAN = 4   # Purata/Mean
-    ROW_P5   = 7   # Minimum 5%
-    ROW_P95  = 8   # Maksimum 95%
-
-    y_stats = {}
-    for qi, q_name in enumerate(Q_LABELS):
-        y_stats[q_name] = {}
-        col_start = 1 + qi * N_ITEMS
-        for ii, col in enumerate(ITEMS_ORDER):
-            c = col_start + ii
-            y_stats[q_name][col] = {
-                'mean': float(df.iloc[ROW_MEAN, c]),
-                'p5':   float(df.iloc[ROW_P5,   c]),
-                'p95':  float(df.iloc[ROW_P95,  c]),
-            }
-
-    return y_stats
+Y_DATA = {
+    'Q1': {
+        'N_1': {'mean':0.1566,'p5':0.1562,'p95':0.1569},
+        'N_2': {'mean':0.0194,'p5':0.0191,'p95':0.0198},
+        'N_3': {'mean':0.0293,'p5':0.0290,'p95':0.0297},
+        'N_4': {'mean':0.3040,'p5':0.3037,'p95':0.3043},
+        'N_5': {'mean':0.0492,'p5':0.0488,'p95':0.0495},
+        'N_6': {'mean':0.0214,'p5':0.0211,'p95':0.0218},
+        'N_7': {'mean':0.1011,'p5':0.1008,'p95':0.1014},
+        'N_8': {'mean':0.0904,'p5':0.0901,'p95':0.0908},
+        'W_1': {'mean':0.0370,'p5':0.0365,'p95':0.0376},
+        'W_2': {'mean':0.0380,'p5':0.0374,'p95':0.0385},
+        'W_3': {'mean':0.3892,'p5':0.3886,'p95':0.3897},
+        'S_1': {'mean':0.2923,'p5':0.2914,'p95':0.2931},
+    },
+    'Q2': {
+        'N_1': {'mean':0.1690,'p5':0.1687,'p95':0.1694},
+        'N_2': {'mean':0.0210,'p5':0.0206,'p95':0.0213},
+        'N_3': {'mean':0.0316,'p5':0.0312,'p95':0.0320},
+        'N_4': {'mean':0.3283,'p5':0.3280,'p95':0.3287},
+        'N_5': {'mean':0.0530,'p5':0.0527,'p95':0.0534},
+        'N_6': {'mean':0.0231,'p5':0.0228,'p95':0.0235},
+        'N_7': {'mean':0.1092,'p5':0.1088,'p95':0.1096},
+        'N_8': {'mean':0.0977,'p5':0.0973,'p95':0.0981},
+        'W_1': {'mean':0.0401,'p5':0.0395,'p95':0.0407},
+        'W_2': {'mean':0.0409,'p5':0.0403,'p95':0.0415},
+        'W_3': {'mean':0.4203,'p5':0.4197,'p95':0.4209},
+        'S_1': {'mean':0.3156,'p5':0.3147,'p95':0.3165},
+    },
+    'Q3': {
+        'N_1': {'mean':0.1691,'p5':0.1687,'p95':0.1694},
+        'N_2': {'mean':0.0210,'p5':0.0207,'p95':0.0214},
+        'N_3': {'mean':0.0314,'p5':0.0311,'p95':0.0318},
+        'N_4': {'mean':0.3284,'p5':0.3280,'p95':0.3288},
+        'N_5': {'mean':0.0531,'p5':0.0528,'p95':0.0535},
+        'N_6': {'mean':0.0232,'p5':0.0228,'p95':0.0236},
+        'N_7': {'mean':0.1093,'p5':0.1089,'p95':0.1096},
+        'N_8': {'mean':0.0978,'p5':0.0974,'p95':0.0981},
+        'W_1': {'mean':0.0401,'p5':0.0395,'p95':0.0407},
+        'W_2': {'mean':0.0411,'p5':0.0405,'p95':0.0417},
+        'W_3': {'mean':0.4203,'p5':0.4198,'p95':0.4209},
+        'S_1': {'mean':0.3154,'p5':0.3145,'p95':0.3163},
+    },
+    'Q4': {
+        'N_1': {'mean':0.1837,'p5':0.1833,'p95':0.1840},
+        'N_2': {'mean':0.0227,'p5':0.0224,'p95':0.0231},
+        'N_3': {'mean':0.0344,'p5':0.0341,'p95':0.0348},
+        'N_4': {'mean':0.3569,'p5':0.3565,'p95':0.3573},
+        'N_5': {'mean':0.0578,'p5':0.0574,'p95':0.0582},
+        'N_6': {'mean':0.0250,'p5':0.0247,'p95':0.0254},
+        'N_7': {'mean':0.1186,'p5':0.1183,'p95':0.1190},
+        'N_8': {'mean':0.1062,'p5':0.1058,'p95':0.1066},
+        'W_1': {'mean':0.0438,'p5':0.0431,'p95':0.0444},
+        'W_2': {'mean':0.0444,'p5':0.0438,'p95':0.0451},
+        'W_3': {'mean':0.4570,'p5':0.4563,'p95':0.4576},
+        'S_1': {'mean':0.3426,'p5':0.3416,'p95':0.3436},
+    },
+}
 
 # -----------------------------------------------------------------------
-# Computation using y-values file
+# Computation using embedded y-values
 # -----------------------------------------------------------------------
-def compute_table_from_y(y_stats, I_income, p_name, alpha_name, mode='mean'):
-    """
-    mode: 'mean' = use Purata/Mean for both Min and Max (testing)
-          'percentile' = use p5 for Min, p95 for Max
-    """
+def compute_table_from_y(I_income, p_name, alpha_name, mode='mean'):
     quarters = P_TYPES[p_name]
     alpha    = ALPHA_SCENARIOS[alpha_name]
+    results  = {}
 
-    results = {}
     for q_name, p in quarters.items():
         q_income = p * I_income
         E_kep    = alpha['Keperluan'] * q_income
@@ -369,45 +400,31 @@ def compute_table_from_y(y_stats, I_income, p_name, alpha_name, mode='mean'):
         E_map    = {'Keperluan': E_kep, 'Kehendak': E_keh, 'Simpanan': E_sim}
 
         results[q_name] = {}
-        sum_y_kep = 0; sum_y_keh = 0; sum_y_sim = 0
+        sum_y = {'Keperluan': 0, 'Kehendak': 0, 'Simpanan': 0}
 
         for col in ALL_COLS:
-            grp = GROUP_MAP[col]
-            E_k = E_map[grp]
-            stats = y_stats[q_name][col]
-
-            if mode == 'mean':
-                y_min = stats['mean']
-                y_max = stats['mean']
-            else:
-                y_min = stats['p5']
-                y_max = stats['p95']
-
-            rm_min = round(y_min * E_k, 2)
-            rm_max = round(y_max * E_k, 2)
+            grp   = GROUP_MAP[col]
+            E_k   = E_map[grp]
+            stats = Y_DATA[q_name][col]
+            y_val = stats['mean']  # testing with mean
+            rm    = round(y_val * E_k, 2)
 
             results[q_name][col] = {
-                'y_min':  round(y_min, 4),
-                'y_max':  round(y_max, 4),
-                'rm_min': rm_min,
-                'rm_max': rm_max,
+                'y_min':  round(y_val, 4),
+                'y_max':  round(y_val, 4),
+                'rm_min': rm,
+                'rm_max': rm,
                 'E_k':    round(E_k, 2),
             }
+            sum_y[grp] += y_val
 
-            # Accumulate for balance calculation
-            y_mean = stats['mean']
-            if grp == 'Keperluan': sum_y_kep += y_mean
-            elif grp == 'Kehendak': sum_y_keh += y_mean
-            else: sum_y_sim += y_mean
-
-        # Balance = Σ(E_k - e_k) where e_k ≈ Σy_mean × E_k
-        b1 = round(E_kep * (1 - sum_y_kep), 2)
-        b2 = round(E_keh * (1 - sum_y_keh), 2)
-        b3 = round(E_sim * (1 - sum_y_sim), 2)
+        # Balance = E_k × (1 - Σy_mean)
+        b1  = round(E_kep * (1 - sum_y['Keperluan']), 2)
+        b2  = round(E_keh * (1 - sum_y['Kehendak']),  2)
+        b3  = round(E_sim * (1 - sum_y['Simpanan']),  2)
         bal = round(b1 + b2 + b3, 2)
 
         results[q_name]['BALANCE'] = {
-            'b1': b1, 'b2': b2, 'b3': b3,
             'rm_min': bal,
             'rm_max': bal,
         }
@@ -419,8 +436,21 @@ def compute_table_from_y(y_stats, I_income, p_name, alpha_name, mode='mean'):
 # -----------------------------------------------------------------------
 def build_table_html(table_data, quarters):
     q_labels = ['Q1','Q2','Q3','Q4']
-    group_colors = {'Keperluan':'row-group-kep','Kehendak':'row-group-keh',
-                    'Simpanan':'row-group-sim'}
+    group_colors = {
+        'Keperluan': 'row-group-kep',
+        'Kehendak':  'row-group-keh',
+        'Simpanan':  'row-group-sim'
+    }
+    group_header_bg = {
+        'Keperluan': 'rgba(66,133,244,0.25)',
+        'Kehendak':  'rgba(52,168,83,0.25)',
+        'Simpanan':  'rgba(234,67,53,0.25)',
+    }
+    group_header_color = {
+        'Keperluan': '#90caf9',
+        'Kehendak':  '#a5d6a7',
+        'Simpanan':  '#ef9a9a',
+    }
 
     html = '''
     <div class="table-container">
@@ -436,18 +466,36 @@ def build_table_html(table_data, quarters):
         html += '<th class="th-min q-divider">Min</th><th class="th-max">Max</th>'
     html += '</tr></thead><tbody>'
 
+    prev_group = None
     for col in ALL_COLS:
         item_disp = ITEM_DISPLAY[col]
         grp       = GROUP_MAP[col]
         grp_cls   = group_colors[grp]
 
-        # Item name row
+        # Group separator header row
+        if grp != prev_group:
+            n_cols = 1 + len(q_labels) * 2
+            html += f'''<tr>
+                <td colspan="{n_cols}" style="
+                    background:{group_header_bg[grp]};
+                    color:{group_header_color[grp]};
+                    font-weight:700;
+                    font-size:0.75rem;
+                    letter-spacing:1px;
+                    text-transform:uppercase;
+                    padding:6px 20px;
+                    border-bottom:1px solid rgba(255,255,255,0.08);
+                ">{grp}</td>
+            </tr>'''
+            prev_group = grp
+
+        # Y value row
         html += f'<tr class="row-item-name {grp_cls}">'
         html += f'<td class="cell-item">{item_disp}</td>'
         for q in q_labels:
             d = table_data.get(q, {}).get(col, {})
-            html += f'<td class="cell-y-min q-divider">{d.get("y_min","—"):.4f}</td>'
-            html += f'<td class="cell-y-max">{d.get("y_max","—"):.4f}</td>'
+            html += f'<td class="cell-y-min q-divider">{d.get("y_min",0):.4f}</td>'
+            html += f'<td class="cell-y-max">{d.get("y_max",0):.4f}</td>'
         html += '</tr>'
 
         # RM row
@@ -455,21 +503,30 @@ def build_table_html(table_data, quarters):
         html += '<td class="cell-label">RM</td>'
         for q in q_labels:
             d = table_data.get(q, {}).get(col, {})
-            rm_min = d.get('rm_min', 0)
-            rm_max = d.get('rm_max', 0)
-            html += f'<td class="cell-rm-min q-divider">RM {rm_min:,.2f}</td>'
-            html += f'<td class="cell-rm-max">RM {rm_max:,.2f}</td>'
+            html += f'<td class="cell-rm-min q-divider">RM {d.get("rm_min",0):,.2f}</td>'
+            html += f'<td class="cell-rm-max">RM {d.get("rm_max",0):,.2f}</td>'
         html += '</tr>'
 
     # Balance row
+    n_cols = 1 + len(q_labels) * 2
+    html += f'''<tr>
+        <td colspan="{n_cols}" style="
+            background:rgba(255,215,0,0.12);
+            color:#ffe082;
+            font-weight:700;
+            font-size:0.75rem;
+            letter-spacing:1px;
+            text-transform:uppercase;
+            padding:6px 20px;
+            border-bottom:1px solid rgba(255,255,255,0.08);
+        ">Balance</td>
+    </tr>'''
     html += '<tr class="row-balance row-group-bal">'
-    html += '<td class="cell-item" style="color:#ffe082;">BALANCE</td>'
+    html += '<td class="cell-item" style="color:#ffe082;">Quarterly Balance</td>'
     for q in q_labels:
         d = table_data.get(q, {}).get('BALANCE', {})
-        rm_min = d.get('rm_min', 0)
-        rm_max = d.get('rm_max', 0)
-        html += f'<td class="cell-bal-min q-divider">RM {rm_min:,.2f}</td>'
-        html += f'<td class="cell-bal-max">RM {rm_max:,.2f}</td>'
+        rm = d.get('rm_min', 0)
+        html += f'<td class="cell-bal-min q-divider" colspan="2" style="text-align:center;">RM {rm:,.2f}</td>'
     html += '</tr>'
 
     html += '</tbody></table></div>'
@@ -490,14 +547,6 @@ st.markdown("""
 # ── Sidebar ──────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### ⚙️ Parameters")
-    st.markdown("---")
-
-    uploaded = st.file_uploader(
-        "📂 Upload y-Values Statistics File",
-        type=['xlsx'],
-        help="Upload the y Distribution Statistics Excel file (y-values-data.xlsx)"
-    )
-
     st.markdown("---")
 
     I_income = st.number_input(
@@ -552,37 +601,14 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ── Main Content ──────────────────────────────────────────────────────────
-if not uploaded:
-    st.markdown("""
-    <div style='text-align:center;padding:4rem 2rem;color:rgba(255,255,255,0.4)'>
-        <div style='font-size:4rem;margin-bottom:1rem'>📊</div>
-        <div style='font-size:1.2rem;font-weight:600;color:rgba(255,255,255,0.6)'>Upload y-Values Statistics File to get started</div>
-        <div style='font-size:0.9rem;margin-top:0.5rem'>Upload the <b>y-values-data.xlsx</b> file generated from the main model</div>
-        <div style='margin-top:1.5rem;padding:1rem;background:rgba(102,126,234,0.1);border-radius:10px;
-        border:1px solid rgba(102,126,234,0.3);font-size:0.82rem;color:rgba(255,255,255,0.5);max-width:500px;margin-left:auto;margin-right:auto;'>
-        📌 The file should contain KDE statistics including Purata/Mean, Minimum 5%, Maksimum 95% for all 12 expense items across 4 quarters.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
-
 if calc_btn:
-    # Parse y-values file
-    file_bytes = uploaded.read()
-    with st.spinner("📂 Reading y-values statistics file..."):
-        try:
-            y_stats = parse_y_values_file(file_bytes)
-        except Exception as e:
-            st.error(f"❌ Error reading file: {e}")
-            st.stop()
-
     # Loading animation
     progress_bar = st.progress(0)
     status_text  = st.empty()
 
     steps = [
         (20,  "📊 Computing quarterly income allocations (E_k)..."),
-        (45,  "🔢 Applying Purata/Mean y-values from statistics file..."),
+        (45,  "🔢 Applying Purata/Mean y-values from statistics..."),
         (70,  "💹 Computing RM values: y_mean × E_k..."),
         (90,  "⚖️  Calculating quarterly balance estimates..."),
         (100, "✅ Table ready!"),
@@ -598,8 +624,8 @@ if calc_btn:
     progress_bar.empty()
     status_text.empty()
 
-    # Compute table using mean y values
-    table_data = compute_table_from_y(y_stats, I_income, p_name, alpha_name, mode='mean')
+    # Compute table using embedded mean y values
+    table_data = compute_table_from_y(I_income, p_name, alpha_name)
 
     # ── Summary Cards ─────────────────────────────────────────────────
     q1_income  = P_TYPES[p_name]['Q1'] * I_income
@@ -650,11 +676,10 @@ if calc_btn:
     </div>
     """, unsafe_allow_html=True)
 
-elif not calc_btn:
-    if uploaded:
-        st.markdown("""
-        <div style='text-align:center;padding:3rem;color:rgba(255,255,255,0.5)'>
-            <div style='font-size:3rem'>⚡</div>
-            <div style='font-size:1rem;margin-top:0.5rem'>Click <b>Calculate</b> to generate the table</div>
-        </div>
-        """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <div style='text-align:center;padding:3rem;color:rgba(255,255,255,0.5)'>
+        <div style='font-size:3rem'>⚡</div>
+        <div style='font-size:1rem;margin-top:0.5rem'>Set your parameters and click <b>Calculate</b></div>
+    </div>
+    """, unsafe_allow_html=True)
