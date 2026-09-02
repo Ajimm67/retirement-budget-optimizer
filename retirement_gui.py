@@ -66,6 +66,15 @@ html, body, [class*="css"] {
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* Make sure sidebar toggle button is always visible */
+[data-testid="collapsedControl"] {
+    display: block !important;
+    visibility: visible !important;
+    color: white !important;
+    background: rgba(102,126,234,0.4) !important;
+    border-radius: 8px !important;
+}
+
 /* Main background */
 .main { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height: 100vh; }
 .block-container { padding: 1.5rem 2rem; }
