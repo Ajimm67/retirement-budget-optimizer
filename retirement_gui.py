@@ -27,18 +27,18 @@ SIMPANAN  = ['S_1']
 ALL_COLS  = KEPERLUAN + KEHENDAK + SIMPANAN
 
 ITEM_DISPLAY = {
-    'N_1': 'Keperluan 1',
-    'N_2': 'Keperluan 2',
-    'N_3': 'Keperluan 3',
-    'N_4': 'Keperluan 4',
-    'N_5': 'Keperluan 5',
-    'N_6': 'Keperluan 6',
-    'N_7': 'Keperluan 7',
-    'N_8': 'Keperluan 8',
-    'W_1': 'Kehendak 1',
-    'W_2': 'Kehendak 2',
-    'W_3': 'Kehendak 3',
-    'S_1': 'Simpanan 1',
+    'N_1': 'Makanan & Minuman Bukan Beralkohol',
+    'N_2': 'Perumahan Elektrik, Gas & Bahan Api',
+    'N_3': 'Pengangkutan',
+    'N_4': 'Kesihatan',
+    'N_5': 'Pendidikan',
+    'N_6': 'Pakaian & Kasut',
+    'N_7': 'Perabot, & Penyelenggaraan Isi Rumah',
+    'N_8': 'Komunikasi',
+    'W_1': 'Rekreasi & Budaya',
+    'W_2': 'Restoran & Hotel',
+    'W_3': 'Alkohol & Perkhidmatan Lain',
+    'S_1': 'Simpanan Kewangan',
 }
 
 GROUP_MAP = {}
