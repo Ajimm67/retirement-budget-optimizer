@@ -401,7 +401,6 @@ st.markdown("""
 # Centered income input
 _, mid, _ = st.columns([1, 1.4, 1])
 with mid:
-    st.markdown('<div class="input-card">', unsafe_allow_html=True)
     st.markdown('<p class="input-label">💵 Annual Income (RM)</p>', unsafe_allow_html=True)
     I_income = st.number_input(
         "", min_value=1000, max_value=9_999_999,
